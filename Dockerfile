@@ -88,4 +88,5 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # Start the custom server using tsx
-CMD ["npx", "tsx", "server.ts"]
+# Diagnostic: print PATH and check ffmpeg before starting
+CMD ["/bin/sh", "-c", "echo \"PATH=$PATH\" && echo \"which ffmpeg:\" && which ffmpeg || true && echo \"ls /usr/bin/ff*:\" && ls /usr/bin/ff* || true && npx tsx server.ts"]
