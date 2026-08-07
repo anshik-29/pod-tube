@@ -13,6 +13,8 @@
     "cleanup": "node scripts/cleanup-cron.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1105.0",
+    "@aws-sdk/s3-request-presigner": "^3.1105.0",
     "bcrypt": "^5.1.1",
     "fluent-ffmpeg": "^2.1.2",
     "jsonwebtoken": "^9.0.2",
