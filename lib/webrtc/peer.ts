@@ -13,7 +13,15 @@ export class WebRTCPeer {
     this.peerConnection = new RTCPeerConnection({ iceServers: config.iceServers });
 
     this.peerConnection.ontrack = (event) => {
-      console.log('[WebRTC] ontrack fired, track kind:', event.track.kind);
+      console.log('[WebRTC] ontrack fired, track kind:', event.track.kind, 'id:', event.track.id, 'muted:', event.track.muted);
+      
+      event.track.onmute = () => {
+        console.warn('[WebRTC] Remote track muted (RTP media packets paused/blocked):', event.track.kind, event.track.id);
+      };
+      event.track.onunmute = () => {
+        console.log('[WebRTC] Remote track unmuted (RTP media packets actively flowing!):', event.track.kind, event.track.id);
+      };
+
       if (event.streams && event.streams[0]) {
         this.remoteStream = event.streams[0];
       } else {
@@ -29,13 +37,20 @@ export class WebRTCPeer {
     };
 
     this.peerConnection.onicecandidate = (event) => {
-      if (event.candidate && this.onIceCandidate) {
-        this.onIceCandidate(event.candidate.toJSON());
+      if (event.candidate) {
+        console.log('[WebRTC] Local ICE Candidate gathered:', event.candidate.type || event.candidate.candidate.split(' ')[7]);
+        if (this.onIceCandidate) {
+          this.onIceCandidate(event.candidate.toJSON());
+        }
       }
     };
 
     this.peerConnection.oniceconnectionstatechange = () => {
       console.log('[WebRTC] ICE Connection State:', this.peerConnection.iceConnectionState);
+    };
+
+    this.peerConnection.onconnectionstatechange = () => {
+      console.log('[WebRTC] Peer Connection State:', this.peerConnection.connectionState);
     };
   }
 
