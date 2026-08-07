@@ -53,9 +53,11 @@ async function checkFFmpeg() {
     const versionLine = version.split('\n')[0];
     console.log('[FFmpeg] ✓ FFmpeg is installed and available');
     console.log(`[FFmpeg] ${versionLine.trim()}`);
-  } catch (error) {
+  } catch (error: any) {
     console.warn('[FFmpeg] ⚠️  FFmpeg is not installed or not in PATH.');
     console.warn('[FFmpeg] Video merging feature requires FFmpeg.');
+    console.warn('[FFmpeg] Actual error:', error?.message || error);
+    if (error?.stderr) console.warn('[FFmpeg] stderr:', error.stderr);
   }
 }
 

@@ -25,9 +25,11 @@ export async function verifyFFmpegExists(): Promise<boolean> {
     const versionLine = stdout.split('\n')[0];
     console.log(`[Worker] ✓ FFmpeg verified: ${versionLine.trim()}`);
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Worker] ✗ FFmpeg not found.');
     console.error('[Worker] Please install FFmpeg before starting the processing worker.');
+    console.error('[Worker] Actual error:', error?.message || error);
+    if (error?.stderr) console.error('[Worker] stderr:', error.stderr);
     return false;
   }
 }
