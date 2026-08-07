@@ -53,7 +53,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Install FFmpeg runtime (required for video processing)
 RUN apk add --no-cache \
     ffmpeg \
-    ffmpeg-libs
+    ffmpeg-libs && \
+    which ffmpeg && \
+    ffmpeg -version
 
 # Create a non-root user
 RUN addgroup --system --gid 1001 nodejs
