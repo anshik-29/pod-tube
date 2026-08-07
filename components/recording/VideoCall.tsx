@@ -445,7 +445,9 @@ export function VideoCall({ sessionId, isHost, onRecordingStateChange, guestToke
 
       socketInstance.on('user-joined', async () => {
         console.log('[Socket.IO] A new participant joined the session');
-        await handleCreateOffer();
+        // Don't create offer here — the guest will explicitly request one
+        // via 'webrtc-request-offer'. Creating one here AND in the request
+        // handler causes a duplicate-offer race condition.
         syncLocalMediaState();
       });
 
