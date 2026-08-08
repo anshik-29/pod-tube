@@ -558,10 +558,13 @@ export function VideoCall({ sessionId, isHost, onRecordingStateChange, guestToke
       });
 
       // Monitor connection state for disconnects
+      // IMPORTANT: Use addEventListener instead of direct assignment to preserve
+      // the ICE restart handler set in peer.ts (which calls restartIce() on failure)
       const peerConnection = peerInstance.getPeerConnection();
       if (peerConnection) {
-        peerConnection.oniceconnectionstatechange = () => {
+        peerConnection.addEventListener('iceconnectionstatechange', () => {
           const state = peerConnection.iceConnectionState;
+          console.log('[VideoCall] ICE connection state changed:', state);
           if (state === 'disconnected' || state === 'failed' || state === 'closed') {
             setRemoteStream(null);
             remoteStreamRef.current = null;
@@ -579,10 +582,11 @@ export function VideoCall({ sessionId, isHost, onRecordingStateChange, guestToke
           } else if (state === 'connected' || state === 'completed') {
             setDisconnectWarning(null);
           }
-        };
+        });
 
-        peerConnection.onconnectionstatechange = () => {
+        peerConnection.addEventListener('connectionstatechange', () => {
           const state = peerConnection.connectionState;
+          console.log('[VideoCall] Peer connection state changed:', state);
           if (state === 'disconnected' || state === 'failed' || state === 'closed') {
             setRemoteStream(null);
             remoteStreamRef.current = null;
@@ -598,7 +602,7 @@ export function VideoCall({ sessionId, isHost, onRecordingStateChange, guestToke
           } else if (state === 'connected') {
             setDisconnectWarning(null);
           }
-        };
+        });
       }
 
       // Monitor socket disconnects
