@@ -405,9 +405,19 @@ export function VideoCall({ sessionId, isHost, onRecordingStateChange, guestToke
       await peerInstance.setLocalStream(stream);
 
       peerInstance.setOnRemoteStream((rStream) => {
-        console.log('[VideoCall] Remote MediaStream received via WebRTC ontrack:', rStream.getTracks());
+        console.log('[VideoCall] Remote MediaStream received via WebRTC ontrack:', rStream.getTracks().map(t => `${t.kind}:${t.id}:muted=${t.muted}`));
         remoteStreamRef.current = rStream;
-        setRemoteStream(rStream);
+        
+        // Construct a new MediaStream instance so React state detects reference change on each track addition
+        const freshStream = new MediaStream(rStream.getTracks());
+        setRemoteStream(freshStream);
+
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = rStream;
+          remoteVideoRef.current.play().catch((err) => {
+            console.warn('[VideoCall] Video play error on remoteStream attach:', err);
+          });
+        }
 
         rStream.getVideoTracks().forEach((track) => {
           track.onended = () => setIsRemoteCamOff(true);

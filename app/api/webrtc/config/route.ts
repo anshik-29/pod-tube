@@ -4,7 +4,6 @@ function findEnvVar(name: string): string | undefined {
   if (process.env[name]) return process.env[name];
   if (process.env[`NEXT_PUBLIC_${name}`]) return process.env[`NEXT_PUBLIC_${name}`];
   
-  // Case-insensitive search across process.env keys for resilience
   const lowerName = name.toLowerCase();
   const matchKey = Object.keys(process.env).find(k => {
     const lk = k.toLowerCase();
@@ -26,28 +25,29 @@ export async function GET() {
   ];
 
   if (turnServerUrl && turnUsername && turnPassword) {
-    console.log('[WebRTC API Config] Using custom TURN server:', turnServerUrl);
+    const cleanUrl = turnServerUrl.replace(/^(turn|turns):/i, '').split('?')[0];
+    console.log('[WebRTC API Config] Using custom TURN server:', cleanUrl);
     iceServers.push({
-      urls: turnServerUrl,
+      urls: [
+        `turn:${cleanUrl}`,
+        `turn:${cleanUrl}?transport=udp`,
+        `turn:${cleanUrl}?transport=tcp`,
+        `turns:${cleanUrl}?transport=tcp`
+      ],
       username: turnUsername,
       credential: turnPassword,
     });
   } else {
     console.log('[WebRTC API Config] No custom TURN credentials found. Using Metered Open Relay TURN fallback.');
-    // Metered Open Relay fallback (free open TURN server)
     iceServers.push(
       {
-        urls: 'turn:openrelay.metered.ca:80',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        urls: [
+          'turn:openrelay.metered.ca:80',
+          'turn:openrelay.metered.ca:80?transport=udp',
+          'turn:openrelay.metered.ca:443',
+          'turn:openrelay.metered.ca:443?transport=tcp',
+          'turns:openrelay.metered.ca:443?transport=tcp'
+        ],
         username: 'openrelayproject',
         credential: 'openrelayproject',
       }

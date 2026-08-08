@@ -15,9 +15,15 @@ export function getWebRTCConfig(): WebRTCConfig {
   ];
 
   if (turnServerUrl && turnUsername && turnPassword) {
-    console.log('[WebRTC] Using custom TURN server:', turnServerUrl);
+    const cleanUrl = turnServerUrl.replace(/^(turn|turns):/i, '').split('?')[0];
+    console.log('[WebRTC] Using custom TURN server:', cleanUrl);
     iceServers.push({
-      urls: turnServerUrl,
+      urls: [
+        `turn:${cleanUrl}`,
+        `turn:${cleanUrl}?transport=udp`,
+        `turn:${cleanUrl}?transport=tcp`,
+        `turns:${cleanUrl}?transport=tcp`
+      ],
       username: turnUsername,
       credential: turnPassword,
     });
@@ -25,17 +31,13 @@ export function getWebRTCConfig(): WebRTCConfig {
     console.log('[WebRTC] Using Metered Open Relay TURN fallback');
     iceServers.push(
       {
-        urls: 'turn:openrelay.metered.ca:80',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        urls: [
+          'turn:openrelay.metered.ca:80',
+          'turn:openrelay.metered.ca:80?transport=udp',
+          'turn:openrelay.metered.ca:443',
+          'turn:openrelay.metered.ca:443?transport=tcp',
+          'turns:openrelay.metered.ca:443?transport=tcp'
+        ],
         username: 'openrelayproject',
         credential: 'openrelayproject',
       }
@@ -52,9 +54,10 @@ export async function fetchWebRTCConfig(): Promise<WebRTCConfig> {
       const data = await res.json();
       console.log('[WebRTC] fetchWebRTCConfig response:', data);
       if (data.iceServers && Array.isArray(data.iceServers)) {
-        const hasTurn = data.iceServers.some((s: RTCIceServer) => 
-          Array.isArray(s.urls) ? s.urls.some(u => u.startsWith('turn:')) : (s.urls as string)?.startsWith('turn:')
-        );
+        const hasTurn = data.iceServers.some((s: RTCIceServer) => {
+          const urls = Array.isArray(s.urls) ? s.urls : [s.urls];
+          return urls.some(u => typeof u === 'string' && (u.startsWith('turn:') || u.startsWith('turns:')));
+        });
         if (hasTurn) {
           console.log('[WebRTC] Successfully loaded TURN server configuration from runtime API');
         }
