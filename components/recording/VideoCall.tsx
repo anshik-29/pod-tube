@@ -1005,39 +1005,37 @@ export function VideoCall({ sessionId, isHost, onRecordingStateChange, guestToke
                 </div>
               </div>
 
-              {/* Remote Participant Tile */}
-              {hasRemoteStream && (
-                <div className="relative rounded-2xl overflow-hidden border border-[#26262a] bg-[#141418] shadow-2xl flex items-center justify-center group">
-                  <video
-                    ref={remoteVideoRef}
-                    autoPlay
-                    playsInline
-                    className={`w-full h-full object-cover bg-[#141418] -scale-x-100 ${effectiveRemoteCamOff ? 'hidden' : 'block'}`}
-                  />
-                  {effectiveRemoteCamOff && (
-                    <div className="absolute inset-0 z-10 bg-[#141418] flex flex-col items-center justify-center gap-3">
-                      <div className="w-20 h-20 rounded-full bg-[#24242a] text-white font-bold text-2xl flex items-center justify-center shadow-xl border border-white/10">
-                        {isHost ? 'G' : 'H'}
-                      </div>
+              {/* Remote Participant Tile - permanently mounted in DOM to prevent React unmount AbortError */}
+              <div className={`relative rounded-2xl overflow-hidden border border-[#26262a] bg-[#141418] shadow-2xl items-center justify-center group ${hasRemoteStream ? 'flex' : 'hidden'}`}>
+                <video
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
+                  className={`w-full h-full object-cover bg-[#141418] -scale-x-100 ${effectiveRemoteCamOff ? 'hidden' : 'block'}`}
+                />
+                {effectiveRemoteCamOff && (
+                  <div className="absolute inset-0 z-10 bg-[#141418] flex flex-col items-center justify-center gap-3">
+                    <div className="w-20 h-20 rounded-full bg-[#24242a] text-white font-bold text-2xl flex items-center justify-center shadow-xl border border-white/10">
+                      {isHost ? 'G' : 'H'}
                     </div>
-                  )}
-
-                  {effectiveRemoteMuted && (
-                    <div className="absolute top-4 right-4 z-10 p-2 rounded-xl bg-red-500/80 backdrop-blur-md text-white shadow-md flex items-center gap-1.5 text-xs font-bold">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                        <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" strokeWidth={2} />
-                      </svg>
-                      <span>Muted</span>
-                    </div>
-                  )}
-
-                  <div className="absolute bottom-4 left-4 z-10 px-3 py-1 rounded-xl bg-black/60 backdrop-blur-md text-xs font-bold text-white flex items-center gap-2">
-                    <span>{isHost ? 'Guest' : 'Host'}</span>
-                    {effectiveRemoteMuted && <span className="text-red-400 font-normal text-[10px]">(Muted)</span>}
                   </div>
+                )}
+
+                {effectiveRemoteMuted && (
+                  <div className="absolute top-4 right-4 z-10 p-2 rounded-xl bg-red-500/80 backdrop-blur-md text-white shadow-md flex items-center gap-1.5 text-xs font-bold">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" strokeWidth={2} />
+                    </svg>
+                    <span>Muted</span>
+                  </div>
+                )}
+
+                <div className="absolute bottom-4 left-4 z-10 px-3 py-1 rounded-xl bg-black/60 backdrop-blur-md text-xs font-bold text-white flex items-center gap-2">
+                  <span>{isHost ? 'Guest' : 'Host'}</span>
+                  {effectiveRemoteMuted && <span className="text-red-400 font-normal text-[10px]">(Muted)</span>}
                 </div>
-              )}
+              </div>
             </div>
           )}
 

@@ -61,6 +61,7 @@ export class WebRTCPeer {
     this.localStream = stream;
     const senders = this.peerConnection.getSenders();
     stream.getTracks().forEach((track) => {
+      console.log(`[WebRTC Local Track] kind: ${track.kind}, label: "${track.label}", readyState: ${track.readyState}, enabled: ${track.enabled}, muted: ${track.muted}`);
       const alreadyAdded = senders.some((sender) => sender.track?.id === track.id);
       if (!alreadyAdded) {
         this.peerConnection.addTrack(track, stream);
