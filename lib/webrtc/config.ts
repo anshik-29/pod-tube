@@ -15,14 +15,31 @@ export function getWebRTCConfig(): WebRTCConfig {
   ];
 
   if (turnServerUrl && turnUsername && turnPassword) {
-    console.log('[WebRTC] Using TURN server:', turnServerUrl);
+    console.log('[WebRTC] Using custom TURN server:', turnServerUrl);
     iceServers.push({
       urls: turnServerUrl,
       username: turnUsername,
       credential: turnPassword,
     });
   } else {
-    console.warn('[WebRTC] No TURN server configured (NEXT_PUBLIC_TURN_SERVER_URL). Cross-network WebRTC connections may fail due to NAT/firewalls.');
+    console.log('[WebRTC] Using Metered Open Relay TURN fallback');
+    iceServers.push(
+      {
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      }
+    );
   }
 
   return { iceServers };
@@ -40,8 +57,6 @@ export async function fetchWebRTCConfig(): Promise<WebRTCConfig> {
         );
         if (hasTurn) {
           console.log('[WebRTC] Successfully loaded TURN server configuration from runtime API');
-        } else {
-          console.warn('[WebRTC] API returned iceServers without TURN credentials. Cross-network WebRTC connections may fail.');
         }
         return { iceServers: data.iceServers };
       }
