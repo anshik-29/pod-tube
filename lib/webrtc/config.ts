@@ -33,6 +33,7 @@ export async function fetchWebRTCConfig(): Promise<WebRTCConfig> {
     const res = await fetch('/api/webrtc/config');
     if (res.ok) {
       const data = await res.json();
+      console.log('[WebRTC] fetchWebRTCConfig response:', data);
       if (data.iceServers && Array.isArray(data.iceServers)) {
         const hasTurn = data.iceServers.some((s: RTCIceServer) => 
           Array.isArray(s.urls) ? s.urls.some(u => u.startsWith('turn:')) : (s.urls as string)?.startsWith('turn:')
