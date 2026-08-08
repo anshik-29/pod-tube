@@ -38,7 +38,10 @@ export class WebRTCPeer {
 
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log('[WebRTC] Local ICE Candidate gathered:', event.candidate.type || event.candidate.candidate.split(' ')[7]);
+        const candStr = event.candidate.candidate || '';
+        const match = candStr.match(/typ\s+(\w+)/);
+        const candType = event.candidate.type || (match ? match[1] : 'candidate');
+        console.log('[WebRTC] Local ICE Candidate gathered:', candType);
         if (this.onIceCandidate) {
           this.onIceCandidate(event.candidate.toJSON());
         }
