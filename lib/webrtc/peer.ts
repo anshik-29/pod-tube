@@ -50,6 +50,16 @@ export class WebRTCPeer {
 
     this.peerConnection.oniceconnectionstatechange = () => {
       console.log('[WebRTC] ICE Connection State:', this.peerConnection.iceConnectionState);
+      if (this.peerConnection.iceConnectionState === 'failed') {
+        console.warn('[WebRTC] ICE connection failed. Retrying ICE candidate gathering...');
+        try {
+          if ('restartIce' in this.peerConnection) {
+            (this.peerConnection as any).restartIce();
+          }
+        } catch (e) {
+          console.warn('[WebRTC] Could not restart ICE:', e);
+        }
+      }
     };
 
     this.peerConnection.onconnectionstatechange = () => {
@@ -88,6 +98,7 @@ export class WebRTCPeer {
 
   async setRemoteDescription(description: RTCSessionDescriptionInit): Promise<void> {
     await this.peerConnection.setRemoteDescription(new RTCSessionDescription(description));
+    console.log(`[WebRTC] setRemoteDescription completed successfully. Draining ${this.pendingCandidates.length} queued ICE candidates...`);
     
     // Drain queued ICE candidates now that remote description is set
     while (this.pendingCandidates.length > 0) {
@@ -95,6 +106,7 @@ export class WebRTCPeer {
       if (candidate) {
         try {
           await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+          console.log('[WebRTC] Successfully added queued ICE candidate');
         } catch (e) {
           console.warn('[WebRTC] Error adding queued ICE candidate:', e);
         }
