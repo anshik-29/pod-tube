@@ -99,6 +99,9 @@ export function VideoCall({ sessionId, isHost, onRecordingStateChange, guestToke
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
       remoteVideoRef.current.volume = remoteVolume / 100;
+      remoteVideoRef.current.play().catch((err) => {
+        console.warn('[VideoCall] Autoplay blocked for remote video, attempting recovery:', err);
+      });
     }
   }, [remoteStream, remoteVolume]);
 
