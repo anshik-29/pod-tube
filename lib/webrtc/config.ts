@@ -25,6 +25,9 @@ export function getWebRTCConfig(): WebRTCConfig {
     console.warn('[WebRTC] No TURN server configured (NEXT_PUBLIC_TURN_SERVER_URL). Cross-network WebRTC connections may fail due to NAT/firewalls.');
   }
 
+  return { iceServers };
+}
+
 export async function fetchWebRTCConfig(): Promise<WebRTCConfig> {
   try {
     const res = await fetch('/api/webrtc/config');
