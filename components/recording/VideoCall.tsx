@@ -167,7 +167,13 @@ export function VideoCall({ sessionId, isHost, onRecordingStateChange, guestToke
     socketInstance.on('connect', () => {
       console.log('Socket connected');
       socketInstance.emit('join-session', sessionId);
-      initializeWebRTC(socketInstance, selectedVideoDevice, selectedAudioDevice);
+      if (!peerRef.current) {
+        initializeWebRTC(socketInstance, selectedVideoDevice, selectedAudioDevice);
+      } else if (!isHost) {
+        // On socket reconnect, guest requests offer from host if peer connection already exists
+        console.log('[Socket.IO] Socket reconnected, guest requesting fresh WebRTC offer from host');
+        socketInstance.emit('webrtc-request-offer', { sessionId });
+      }
     });
 
     socketInstance.on('disconnect', () => {
@@ -452,14 +458,16 @@ export function VideoCall({ sessionId, isHost, onRecordingStateChange, guestToke
 
       socketInstance.on('user-joined', async () => {
         console.log('[Socket.IO] A new participant joined the session');
-        // Don't create offer here — the guest will explicitly request one
-        // via 'webrtc-request-offer'. Creating one here AND in the request
-        // handler causes a duplicate-offer race condition.
         syncLocalMediaState();
+        if (!isHost) {
+          // If Guest was already in room when Host joined, Guest requests offer
+          console.log('[Socket.IO] Host joined room, Guest requesting offer...');
+          socketInstance.emit('webrtc-request-offer', { sessionId });
+        }
       });
 
       socketInstance.on('webrtc-request-offer', async () => {
-        console.log('[Socket.IO] Received offer request from participant');
+        console.log('[Socket.IO] Host received offer request from participant');
         await handleCreateOffer();
         syncLocalMediaState();
       });
@@ -472,9 +480,7 @@ export function VideoCall({ sessionId, isHost, onRecordingStateChange, guestToke
         setIsRemoteMuted(false);
       });
 
-      if (isHost) {
-        await handleCreateOffer();
-      } else {
+      if (!isHost) {
         // Guest requests offer from Host upon joining
         console.log('[Socket.IO] Guest requesting offer from Host...');
         socketInstance.emit('webrtc-request-offer', { sessionId });
