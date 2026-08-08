@@ -1,4 +1,4 @@
-import { getWebRTCConfig } from './config';
+import { getWebRTCConfig, WebRTCConfig } from './config';
 
 export class WebRTCPeer {
   private peerConnection: RTCPeerConnection;
@@ -8,9 +8,9 @@ export class WebRTCPeer {
   private onIceCandidate: ((candidate: RTCIceCandidateInit) => void) | null = null;
   private pendingCandidates: RTCIceCandidateInit[] = [];
 
-  constructor() {
-    const config = getWebRTCConfig();
-    this.peerConnection = new RTCPeerConnection({ iceServers: config.iceServers });
+  constructor(config?: WebRTCConfig) {
+    const rtcConfig = config || getWebRTCConfig();
+    this.peerConnection = new RTCPeerConnection({ iceServers: rtcConfig.iceServers });
 
     this.peerConnection.ontrack = (event) => {
       console.log('[WebRTC] ontrack fired, track kind:', event.track.kind, 'id:', event.track.id, 'muted:', event.track.muted);

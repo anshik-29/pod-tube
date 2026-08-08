@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { io, Socket } from 'socket.io-client';
 import { WebRTCPeer } from '@/lib/webrtc/peer';
+import { fetchWebRTCConfig } from '@/lib/webrtc/config';
 import { BrowserRecorder } from '@/lib/recording/recorder';
 import { ChunkUploadQueue } from '@/lib/recording/upload-queue';
 import { DeviceSelector } from './DeviceSelector';
@@ -390,8 +391,11 @@ export function VideoCall({ sessionId, isHost, onRecordingStateChange, guestToke
         videoTrackRef.current = videoTrack;
       }
 
+      // Fetch runtime WebRTC config (including TURN credentials from /api/webrtc/config)
+      const rtcConfig = await fetchWebRTCConfig();
+
       // Create peer connection
-      const peerInstance = new WebRTCPeer();
+      const peerInstance = new WebRTCPeer(rtcConfig);
       await peerInstance.setLocalStream(stream);
 
       peerInstance.setOnRemoteStream((rStream) => {

@@ -25,5 +25,26 @@ export function getWebRTCConfig(): WebRTCConfig {
     console.warn('[WebRTC] No TURN server configured (NEXT_PUBLIC_TURN_SERVER_URL). Cross-network WebRTC connections may fail due to NAT/firewalls.');
   }
 
-  return { iceServers };
+export async function fetchWebRTCConfig(): Promise<WebRTCConfig> {
+  try {
+    const res = await fetch('/api/webrtc/config');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.iceServers && Array.isArray(data.iceServers)) {
+        const hasTurn = data.iceServers.some((s: RTCIceServer) => 
+          Array.isArray(s.urls) ? s.urls.some(u => u.startsWith('turn:')) : (s.urls as string)?.startsWith('turn:')
+        );
+        if (hasTurn) {
+          console.log('[WebRTC] Successfully loaded TURN server configuration from runtime API');
+        } else {
+          console.warn('[WebRTC] API returned iceServers without TURN credentials. Cross-network WebRTC connections may fail.');
+        }
+        return { iceServers: data.iceServers };
+      }
+    }
+  } catch (err) {
+    console.warn('[WebRTC] Failed to fetch /api/webrtc/config, falling back to static config:', err);
+  }
+
+  return getWebRTCConfig();
 }
