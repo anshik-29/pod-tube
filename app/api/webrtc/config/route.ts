@@ -17,6 +17,8 @@ export async function GET() {
   const turnUsername = findEnvVar('TURN_SERVER_USERNAME');
   const turnPassword = findEnvVar('TURN_SERVER_PASSWORD');
 
+  const turnKeysFound = Object.keys(process.env).filter(k => k.toLowerCase().includes('turn'));
+
   const iceServers: RTCIceServer[] = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
@@ -59,6 +61,7 @@ export async function GET() {
     debug: {
       usedCustomTurn: !!(turnServerUrl && turnUsername && turnPassword),
       urlPrefix: turnServerUrl ? turnServerUrl.substring(0, 15) : 'metered-openrelay',
+      envKeysFound: turnKeysFound,
     }
   });
 }
