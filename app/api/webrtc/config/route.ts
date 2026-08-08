@@ -14,30 +14,23 @@ function findEnvVar(name: string): string | undefined {
   return matchKey ? process.env[matchKey] : undefined;
 }
 
-// Fetch fresh, time-scoped TURN credentials from Metered's API
-async function fetchMeteredCredentials(apiKey: string): Promise<RTCIceServer[] | null> {
-  try {
-    const res = await fetch(
-      `https://pod-tube.metered.live/api/v1/turn/credentials?apiKey=${apiKey}`,
-      { signal: AbortSignal.timeout(5000) }
-    );
-    if (res.ok) {
-      const creds = await res.json();
-      console.log('[WebRTC API Config] Fetched fresh Metered TURN credentials:', creds.length, 'servers');
-      return creds;
-    }
-    console.warn('[WebRTC API Config] Metered API returned status:', res.status);
-  } catch (e) {
-    console.warn('[WebRTC API Config] Failed to fetch Metered credentials:', e);
+// Parse a TURN URL into host and port, stripping any protocol prefix
+function parseTurnUrl(rawUrl: string): { host: string; port: string } {
+  // Strip turn:/turns: prefix if present
+  let cleaned = rawUrl.replace(/^(turns?:\/\/|turns?:)/i, '').split('?')[0];
+  
+  // Split host and port
+  const parts = cleaned.split(':');
+  if (parts.length >= 2) {
+    return { host: parts[0], port: parts[1] };
   }
-  return null;
+  return { host: parts[0], port: '443' };
 }
 
 export async function GET() {
   const turnServerUrl = findEnvVar('TURN_SERVER_URL');
   const turnUsername = findEnvVar('TURN_SERVER_USERNAME');
   const turnPassword = findEnvVar('TURN_SERVER_PASSWORD');
-  const meteredApiKey = findEnvVar('METERED_API_KEY');
 
   const turnKeysFound = Object.keys(process.env).filter(k => k.toLowerCase().includes('turn') || k.toLowerCase().includes('metered'));
 
@@ -50,51 +43,40 @@ export async function GET() {
 
   let usedSource = 'none';
 
-  // Strategy 1: Fresh time-scoped credentials from Metered API (best option)
-  if (meteredApiKey) {
-    const meteredServers = await fetchMeteredCredentials(meteredApiKey);
-    if (meteredServers && meteredServers.length > 0) {
-      iceServers.push(...meteredServers);
-      usedSource = 'metered-api-fresh';
-    }
-  }
-
-  // Strategy 2: Static TURN credentials from environment variables
-  if (usedSource === 'none' && turnServerUrl && turnUsername && turnPassword) {
-    const cleanUrl = turnServerUrl.replace(/^(turn|turns):/i, '').split('?')[0];
-    console.log('[WebRTC API Config] Using static TURN credentials for:', cleanUrl);
+  if (turnServerUrl && turnUsername && turnPassword) {
+    const { host, port } = parseTurnUrl(turnServerUrl);
+    console.log('[WebRTC API Config] Using custom TURN server:', host, 'port:', port);
+    
+    // Generate separate RTCIceServer entries per transport for maximum relay candidate generation
     iceServers.push(
       {
-        urls: `turn:${cleanUrl}:80`,
+        urls: `turn:${host}:${port}`,
         username: turnUsername,
         credential: turnPassword,
       },
       {
-        urls: `turn:${cleanUrl}:80?transport=tcp`,
+        urls: `turn:${host}:${port}?transport=tcp`,
         username: turnUsername,
         credential: turnPassword,
       },
       {
-        urls: `turn:${cleanUrl}:443`,
+        urls: `turn:${host}:443`,
         username: turnUsername,
         credential: turnPassword,
       },
       {
-        urls: `turn:${cleanUrl}:443?transport=tcp`,
+        urls: `turn:${host}:443?transport=tcp`,
         username: turnUsername,
         credential: turnPassword,
       },
       {
-        urls: `turns:${cleanUrl}:443?transport=tcp`,
+        urls: `turns:${host}:443?transport=tcp`,
         username: turnUsername,
         credential: turnPassword,
       }
     );
-    usedSource = 'static-env';
-  }
-
-  // Strategy 3: Hardcoded Metered Open Relay fallback (free, may be throttled)
-  if (usedSource === 'none') {
+    usedSource = 'custom-env';
+  } else {
     console.log('[WebRTC API Config] Using Metered Open Relay TURN fallback.');
     iceServers.push(
       {
